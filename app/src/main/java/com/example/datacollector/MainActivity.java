@@ -7,8 +7,11 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -25,13 +28,21 @@ public class MainActivity extends AppCompatActivity {
     Button btnLargeMeal;
     FloatingActionButton addSomething;
 
+
+    FirebaseAuth mAuth = FirebaseAuth.getInstance();
+    private FirebaseAuth.AuthStateListener mAuthListener;
+    FirebaseUser user = mAuth.getCurrentUser();
+    String userID = user.getUid();
+
     DatabaseReference mRootRef = FirebaseDatabase.getInstance().getReference();
-    DatabaseReference mLoggedMealValueRef = mRootRef.child("LoggedMealValue");
+    DatabaseReference mMeal = mRootRef.child(userID).child("Meal");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mAuth = FirebaseAuth.getInstance();
 
         headerMain = (TextView)findViewById(R.id.headerMain);
         txtQMealSize = (TextView)findViewById(R.id.txtQMealSize);
@@ -48,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        mLoggedMealValueRef.addValueEventListener(new ValueEventListener() {
+        mMeal.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 String text = snapshot.getValue(String.class);
@@ -65,22 +76,38 @@ public class MainActivity extends AppCompatActivity {
          btnSmallMeal.setOnClickListener(new View.OnClickListener() {
              @Override
              public void onClick(View view) {
-                 mLoggedMealValueRef.setValue("Small");
+                 mMeal.setValue("Small");
              }
          });
 
         btnNormalMeal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mLoggedMealValueRef.setValue("Normal");
+                mMeal.setValue("Normal");
             }
         });
 
         btnLargeMeal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mLoggedMealValueRef.setValue("Large");
+                mMeal.setValue("Large");
             }
         });
+    }
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (mAuthListener != null) {
+            mAuth.removeAuthStateListener(mAuthListener);
+        }
+    }
+
+    //add a toast to show when successfully signed in
+    /**
+     * customizable toast
+     * @param message
+     */
+    private void toastMessage(String message){
+        Toast.makeText(this,message,Toast.LENGTH_SHORT).show();
     }
 }
